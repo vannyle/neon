@@ -1,37 +1,12 @@
-name: Reindex Algolia Crawler on new doc file added
+name: Deployment and File Check Workflow
 
 on: 
-  push:
-    branches: 
-      - main
-    paths:
-      - 'content/docs/**/*.md'
-      - 'content/changelog/**/*.md'
-      - '!content/docs/README.md'
-      - '!content/docs/shared-content/**/*.md'
   deployment_status:
 
 jobs:
-  check-deployment-success:
-    if: github.event_name == 'deployment_status'
+  check-and-reindex:
     runs-on: ubuntu-latest
-    outputs:
-      deploy_success: ${{ steps.check-deploy-success.outputs.deploy_success }}
-    steps:
-      - name: Check Deployment Success
-        id: check-deploy-success
-        run: |
-          if [ "${{ github.event.deployment_status.state }}" == "success" ]; then
-            echo "::set-output name=deploy_success::true"
-          else
-            echo "::set-output name=deploy_success::false"
-          fi
-
-  check-new-file:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    outputs:
-      new_file: ${{ steps.file-check.outputs.new_file }}
+    if: github.event.deployment_status.state == 'success'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -39,23 +14,19 @@ jobs:
           fetch-depth: 0
 
       - name: Check for new file
-        id: file-check
         run: |
-          git diff --name-status ${{ github.event.before }} ${{ github.sha }} > changes.txt
+          git fetch origin ${GITHUB_REF#refs/heads/}:refs/remotes/origin/${GITHUB_REF#refs/heads/}
+          git diff --name-status origin/${GITHUB_REF#refs/heads/} ${{ github.event.deployment_status.sha }} > changes.txt
           echo "Added files:"
           added_files=$(cat changes.txt | grep '^A' | awk '{print $2}')
           echo $added_files
           if [ -z "$added_files" ]; then
-            echo "::set-output name=new_file::false"
-          else
-            echo "::set-output name=new_file::true"
+            echo "No new files added."
+            exit 0  # Exit if no new files are found
+          fi
 
-  reindex-algolia:
-    needs: [check-new-file, check-deployment-success]
-    if: needs.check-new-file.outputs.new_file == 'true' && needs.check-deployment-success.outputs.deploy_success == 'true'
-    runs-on: ubuntu-latest
-    steps:
       - name: Reindex Algolia
+        if: env.added_files
         env:
           CRAWLER_USER_ID: ${{ secrets.CRAWLER_USER_ID }}
           CRAWLER_API_KEY: ${{ secrets.CRAWLER_API_KEY }}
