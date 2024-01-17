@@ -10,8 +10,9 @@ jobs:
       - name: Output Deployment Info
         run: |
           echo "Deployment Status: ${{ github.event.deployment_status.state }}"
+          echo "GitHub Ref Name: ${{ github.ref_name }}"
           echo "GitHub Ref: ${{ github.ref }}"
-          
+
   check-and-reindex:
     needs: debug-info
     runs-on: ubuntu-latest
