@@ -8,21 +8,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
+        if: github.event.deployment.ref == 'refs/heads/main'
         uses: actions/checkout@v2
         with:
           fetch-depth: 2
 
-      - name: Verify if deployment is for main branch
-        run: |
-          DEPLOYED_REF=${{ github.event.deployment.ref }}
-          echo "Deployed ref: $DEPLOYED_REF"
-          if [ "$DEPLOYED_REF" != "main" ]; then
-            echo "Deployment is not for main branch. Exiting workflow."
-            exit 1
-          fi
-
       - name: Check for new file in specific paths
-        if: github.event.deployment_status.state == 'success'
+        if: github.event.deployment.ref == 'refs/heads/main' && github.event.deployment_status.state == 'success'
         run: |
           git diff --name-status ${{ github.event.deployment_status.sha }}^ ${{ github.event.deployment_status.sha }} | grep '^A' | egrep 'content/docs/|content/changelog/|content/postgresql/' > changes.txt
           if [ -s changes.txt ]; then
