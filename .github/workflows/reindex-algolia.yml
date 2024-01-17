@@ -12,6 +12,7 @@ jobs:
           echo "Deployment Status: ${{ github.event.deployment_status.state }}"
           echo "GitHub Ref Name: ${{ github.ref_name }}"
           echo "GitHub Ref: ${{ github.ref }}"
+          echo "GitHub Event Name: ${{ github.event.release.tag_name }}"
 
   check-and-reindex:
     needs: debug-info
