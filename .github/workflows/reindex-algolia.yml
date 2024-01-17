@@ -13,19 +13,21 @@ jobs:
         with:
           fetch-depth: 2 # Fetches the last two commits for comparison
 
-      - name: Check for new file
+      - name: Check for new file in specific paths
         run: |
-          git diff --name-status ${{ github.event.deployment_status.sha }}^ ${{ github.event.deployment_status.sha }} > changes.txt
+          git diff --name-status ${{ github.event.deployment_status.sha }}^ ${{ github.event.deployment_status.sha }} | grep '^A' | egrep 'content/docs/|content/changelog/|content/postgresql/' > changes.txt
           echo "Added files:"
-          added_files=$(cat changes.txt | grep '^A' | awk '{print $2}')
-          echo $added_files
-          if [ -z "$added_files" ]; then
-            echo "No new files added."
-            exit 0  # Exit if no new files are found
+          cat changes.txt
+          if [ -s changes.txt ]; then
+            echo "New files detected in specified paths."
+            echo "::set-env name=NEW_FILES_DETECTED::true"
+          else
+            echo "No new files added in specified paths."
+            echo "::set-env name=NEW_FILES_DETECTED::false"
           fi
 
       - name: Reindex Algolia
-        if: env.added_files
+        if: env.NEW_FILES_DETECTED == 'true'
         env:
           CRAWLER_USER_ID: ${{ secrets.CRAWLER_USER_ID }}
           CRAWLER_API_KEY: ${{ secrets.CRAWLER_API_KEY }}
