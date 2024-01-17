@@ -4,46 +4,39 @@ on:
   deployment_status:
 
 jobs:
-  debug-info:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-        with:
-          fetch-depth: 2 # Fetches the last two commits for comparison
-          
-      - name: Output Deployment Info
-        run: |
-          echo "Deployment Status: ${{ github.event.deployment_status.state }}"
-          echo "GitHub Ref Name: ${{ github.ref_name }}"
-          echo "GitHub Ref: ${{ github.ref }}"
-          echo "GitHub Event Name: ${{ github.event.release.tag_name }}"
-
   check-and-reindex:
-    needs: debug-info
     runs-on: ubuntu-latest
-    if: github.event.deployment_status.state == 'success' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
         with:
-          fetch-depth: 2 # Fetches the last two commits for comparison
+          fetch-depth: 2
+
+      - name: Verify if deployment is for main branch
+        run: |
+          DEPLOYED_REF=${{ github.event.deployment.ref }}
+          echo "Deployed ref: $DEPLOYED_REF"
+          if [ "$DEPLOYED_REF" != "main" ]; then
+            echo "Deployment is not for main branch. Exiting workflow."
+            exit 1
+          fi
 
       - name: Check for new file in specific paths
+        if: github.event.deployment_status.state == 'success'
         run: |
           git diff --name-status ${{ github.event.deployment_status.sha }}^ ${{ github.event.deployment_status.sha }} | grep '^A' | egrep 'content/docs/|content/changelog/|content/postgresql/' > changes.txt
-          echo "Added files:"
-          cat changes.txt
           if [ -s changes.txt ]; then
             echo "New files detected in specified paths."
-            echo "::set-env name=NEW_FILES_DETECTED::true"
+            echo "Proceeding to reindex Algolia."
+            echo "::set-output name=NEW_FILES_DETECTED::true"
           else
             echo "No new files added in specified paths."
-            echo "::set-env name=NEW_FILES_DETECTED::false"
+            echo "Skipping Algolia reindex."
+            echo "::set-output name=NEW_FILES_DETECTED::false"
           fi
 
       - name: Reindex Algolia
-        if: env.NEW_FILES_DETECTED == 'true'
+        if: steps.check-for-new-file.outputs.NEW_FILES_DETECTED == 'true'
         env:
           CRAWLER_USER_ID: ${{ secrets.CRAWLER_USER_ID }}
           CRAWLER_API_KEY: ${{ secrets.CRAWLER_API_KEY }}
