@@ -4,7 +4,16 @@ on:
   deployment_status:
 
 jobs:
+  debug-info:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Output Deployment Info
+        run: |
+          echo "Deployment Status: ${{ github.event.deployment_status.state }}"
+          echo "GitHub Ref: ${{ github.ref }}"
+          
   check-and-reindex:
+    needs: debug-info
     runs-on: ubuntu-latest
     if: github.event.deployment_status.state == 'success' && github.ref == 'refs/heads/main'
     steps:
@@ -12,11 +21,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 2 # Fetches the last two commits for comparison
-
-      - name: Debug Info
-        run: |
-          echo "Deployment Status: ${{ github.event.deployment_status.state }}"
-          echo "GitHub Ref: ${{ github.ref }}"
 
       - name: Check for new file in specific paths
         run: |
