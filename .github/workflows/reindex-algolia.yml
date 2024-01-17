@@ -7,6 +7,11 @@ jobs:
   debug-info:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 2 # Fetches the last two commits for comparison
+          
       - name: Output Deployment Info
         run: |
           echo "Deployment Status: ${{ github.event.deployment_status.state }}"
