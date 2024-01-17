@@ -13,6 +13,11 @@ jobs:
         with:
           fetch-depth: 2 # Fetches the last two commits for comparison
 
+      - name: Debug Info
+        run: |
+          echo "Deployment Status: ${{ github.event.deployment_status.state }}"
+          echo "GitHub Ref: ${{ github.ref }}"
+
       - name: Check for new file in specific paths
         run: |
           git diff --name-status ${{ github.event.deployment_status.sha }}^ ${{ github.event.deployment_status.sha }} | grep '^A' | egrep 'content/docs/|content/changelog/|content/postgresql/' > changes.txt
