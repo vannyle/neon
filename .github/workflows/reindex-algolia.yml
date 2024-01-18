@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Check for new Markdown files
         id: markdown-check
         run: |
@@ -35,6 +37,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-markdown]
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
       - name: Reindex Algolia Crawler if new file added
         env:
           CRAWLER_USER_ID: ${{ secrets.CRAWLER_USER_ID }}
