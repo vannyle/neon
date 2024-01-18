@@ -9,8 +9,8 @@ jobs:
       - name: Print GitHub event deployment_status
         run: echo "${{ toJson(github.event.deployment_status) }}"
       - name: Print GitHub event deployment
-        run: echo "${{ toJson(github.event.deployment.ref) }}"
-        
+        run: echo "${{ toJson(github.event.deployment) }}"
+
   reindex-algolia:
     if: github.event.deployment_status.state == 'success' && github.event.deployment.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
