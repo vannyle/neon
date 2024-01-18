@@ -1,7 +1,16 @@
 name: Reindex Algolia Crawler on Deployment Success
 
-on: deployment_status
-
+on:
+  push:
+    branches: 
+      - main
+    paths:
+      - 'content/docs/**/*.md'
+      - 'content/changelog/**/*.md'
+      - '!content/docs/README.md' # Exclude the README.md file
+      - '!content/docs/shared-content/**/*.md' # Exclude the shared-content folder
+  deployment_status:
+  
 jobs:
   debug-info:
     runs-on: ubuntu-latest
