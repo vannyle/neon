@@ -12,7 +12,7 @@ jobs:
         run: echo "${{ toJson(github.event.deployment) }}"
 
   reindex-algolia:
-    if: github.event.deployment_status.state == 'success' && github.event.deployment.ref == 'refs/heads/main'
+    if: github.event.deployment_status.state == 'success' && github.event.deployment_status.environment == 'Production'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
