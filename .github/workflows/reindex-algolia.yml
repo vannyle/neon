@@ -20,14 +20,17 @@ jobs:
       - name: Check for new Markdown files
         id: markdown-check
         run: |
-          git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep '\.md$' || echo "No new markdown files"
-          if [ $? -eq 0 ]; then
-            echo "::set-output name=markdown_added::true"
+          git diff --name-status ${{ github.event.before }} ${{ github.sha }} > changes.txt
+          echo "Added files:"
+          added_files=$(cat changes.txt | grep '^A' | awk '{print $2}')  # Filters out only the added files.
+          echo $added_files
+          if [ -z "$added_files" ]; then
+            echo "::set-output name=markdown_added::false" 
           else
-            echo "::set-output name=markdown_added::false"
+            echo "::set-output name=markdown_added::true" 
           fi
-    
-  trigger-algolia:          
+
+  trigger-algolia:
     if: github.event_name == 'deployment_status' && github.event.deployment_status.state == 'success' && needs.check-markdown.outputs.markdown_added == 'true'
     runs-on: ubuntu-latest
     needs: [check-markdown]
